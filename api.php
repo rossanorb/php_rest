@@ -39,8 +39,8 @@ class API extends REST {
 
         if (sizeof($_REQUEST) == 0)
             $this->response('', 404);
-
-        $func = strtolower(trim(str_replace("/", "", $_REQUEST['rquest'])));
+                
+        $func =  strtolower( trim( explode('/', $this->_request['request'])[0])) ;        
         if ((int) method_exists($this, $func) > 0)
             $this->$func();
         else
@@ -174,16 +174,26 @@ class API extends REST {
     private function user() {
         error_log('method: user');
 
-        if ($this->get_request_method() != "POST") {
+        if ($this->get_request_method() != "GET") {
             $this->response('', 406);
         }
 
-        $id = $this->_request['id'];
+        
+        $request =explode('/',  $this->_request['request']);
+        error_log(count($request));
+        
+        if(count($request)  > 2 ){
+            $this->response('', 404);
+        }
 
-        if( $query = $this->db->query("SELECT user_id as id, user_email as email FROM users WHERE user_id = {$id}")) {
-            $result = array();
-            $result[] = $query->fetch_array(MYSQLI_ASSOC);
-             $this->response($this->json($result), 200);
+        if( $query = $this->db->query("SELECT user_id as id, user_email as email FROM users WHERE user_id = {$request[1]} limit 1")) {            
+            $result = $query->fetch_array(MYSQLI_ASSOC);
+                        
+            if(is_null($result)){
+                $this->response('', 404);
+            }
+            
+            $this->response($this->json($result), 200);
         }
         
          $this->response('', 204); // If no records "No Content" status        
